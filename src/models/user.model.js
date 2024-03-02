@@ -58,7 +58,12 @@ userSchema.pre("save", async function (next) {
 
 // custom method for checking password is correct or not
 userSchema.methods.isPasswordCorrect = async function (password) {
-  return await bcrypt.compare(password, this.password)
+  // console.log(this.password);
+  // console.log(password);
+
+  // console.log(await bcrypt.compare(password.trim(), this.password.trim()));
+  // return await bcrypt.compare(password.trim(), this.password.trim())
+  return password.trim() === this.password.trim()
 }
 
 // custom method for genrate access token
