@@ -123,11 +123,18 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Username or email is required")
   }
 
+  // const user = await User.findOne({
+  //   $or: [{ username, email }]
+  // })
+
   const user = await User.findOne({
-    $or: [{ username, email }]
-  })
+    $or: [
+      { username: { $in: [username] } },
+      { email: { $in: [email] } }
+    ]
+  });
 
-
+  console.log(`User is >> ${user}`);
 
   if (!user) {
     throw new ApiError(400, "User doesn't exist")
@@ -194,33 +201,38 @@ const refreshAccessToken = asyncHandler(async (req, rs) => {
     throw new ApiError(401, "Unauthorized access")
   }
 
-  const decodedToken = jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+  try {
+    const decodedToken = jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
 
-  const user = await User.findById(decodedToken._id)
-  if (!user) {
-    throw new ApiError(401, "Invalid refresh token")
-  }
+    const user = await User.findById(decodedToken._id)
+    if (!user) {
+      throw new ApiError(401, "Invalid refresh token")
+    }
 
-  if (decodedToken !== user?.refreshToken) {
-    throw new ApiError(401, "refresh token is expired or used")
-  }
+    if (decodedToken !== user?.refreshToken) {
+      throw new ApiError(401, "refresh token is expired or used")
+    }
 
-  const options = {
-    httpOnly: true,
-    secure: true,
-  }
+    const options = {
+      httpOnly: true,
+      secure: true,
+    }
 
-  const { accessToken, newRefreshToken } = await generateAccessTokenAndRefreshTokens(user._id)
+    const { accessToken, newRefreshToken } = await generateAccessTokenAndRefreshTokens(user._id)
 
-  return res.status(200).cookie('accessToken', accessToken).cookie('refreshToken', newRefreshToken).json(
-    new ApiResponse(
-      200,
-      { accessToken, refreshAccessToken: newRefreshToken },
-      "Access token refreshed succesfully"
+    return res.status(200).cookie('accessToken', accessToken).cookie('refreshToken', newRefreshToken).json(
+      new ApiResponse(
+        200,
+        { accessToken, refreshAccessToken: newRefreshToken },
+        "Access token refreshed succesfully"
 
+      )
     )
-  )
+  } catch (error) {
+    throw new ApiError(401, error?.message)
+
+  }
 
 })
 
-export { registerUser, loginUser, logoutUser };
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
