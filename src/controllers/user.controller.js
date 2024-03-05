@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 import { uploadCloudinary } from "../utils/cloudnary.js";
 import jwt from 'jsonwebtoken'
-import { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 
 const generateAccessTokenAndRefreshTokens = async (userId) => {
   try {
@@ -179,8 +179,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, {
-    $set: {
-      refreshToken: undefined
+    $unset: {
+      refreshToken: 1
     }
   }
     , {
@@ -386,10 +386,11 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 })
 
 const getWatchHishtory = asyncHandler(async (req, res) => {
+
   const user = await User.aggregate([
     {
       $match: {
-        _id: new Mongoose.Types.ObjectId(req.user._id)
+        _id: new mongoose.Types.ObjectId(req.user._id)
       }
     }, {
       $lookup: {
